@@ -1,8 +1,8 @@
 // api/debug.js
 const chromium = require("@sparticuz/chromium-min");
 const puppeteer = require("puppeteer-core");
+const path = require("path");
 
-// Binary diambil langsung dari GitHub release - tidak perlu bundle
 const CHROMIUM_URL = "https://github.com/Sparticuz/chromium/releases/download/v123.0.0/chromium-v123.0.0-pack.tar";
 
 module.exports = async function handler(req, res) {
@@ -14,16 +14,24 @@ module.exports = async function handler(req, res) {
 
   let browser = null;
   try {
+    chromium.setHeadlessMode = true;
+    chromium.setGraphicsMode = false;
+
+    const executablePath = await chromium.executablePath(CHROMIUM_URL);
+
+    // CRITICAL: set LD_LIBRARY_PATH agar chromium bisa load shared libraries
+    const execDir = path.dirname(executablePath);
+    process.env.LD_LIBRARY_PATH = execDir;
+
     browser = await puppeteer.launch({
       args: [...chromium.args, "--no-sandbox", "--disable-setuid-sandbox", "--hide-scrollbars"],
       defaultViewport: chromium.defaultViewport,
-      executablePath: await chromium.executablePath(CHROMIUM_URL),
-      headless: chromium.headless,
+      executablePath,
+      headless: true,
       ignoreHTTPSErrors: true,
     });
 
     const page = await browser.newPage();
-
     await page.setUserAgent(
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
     );
