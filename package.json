@@ -1,12 +1,9 @@
 {
   "name": "spmb-proxy-backend",
   "version": "1.0.0",
-  "description": "Backend proxy for SPMB Kubu Raya using headless chromium",
+  "description": "Backend proxy for SPMB Kubu Raya",
   "engines": {
     "node": ">=24"
   },
-  "dependencies": {
-    "@sparticuz/chromium": "^123.0.1",
-    "puppeteer-core": "^22.6.0"
-  }
+  "dependencies": {}
 }
