@@ -1,10 +1,4 @@
 {
-  "functions": {
-    "api/spmb.js": {
-      "memory": 1024,
-      "maxDuration": 60
-    }
-  },
   "headers": [
     {
       "source": "/api/(.*)",
