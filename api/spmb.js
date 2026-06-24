@@ -17,6 +17,24 @@ function fetchHtml(url) {
   });
 }
 
+function stripHtml(html) {
+  return html
+    .replace(/<[^>]+>/g, "")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&#039;/g, "'")
+    .trim();
+}
+
+function getStatusClass(tdHtml) {
+  if (/badge-success/i.test(tdHtml)) return "verified";
+  if (/badge-warning/i.test(tdHtml)) return "returned";
+  if (/badge-info/i.test(tdHtml))    return "pending";
+  return "";
+}
+
 function parseTable(html) {
   const rows = [];
   const tbodyMatch = html.match(/<tbody[^>]*>([\s\S]*?)<\/tbody>/i);
@@ -26,36 +44,29 @@ function parseTable(html) {
 
   trMatches.forEach((tr) => {
     const tdMatches = tr.match(/<td[^>]*>([\s\S]*?)<\/td>/gi) || [];
-    if (tdMatches.length === 0) return;
+    if (tdMatches.length < 8) return;
 
-    const cols = tdMatches.map((td) =>
-      td.replace(/<[^>]+>/g, "")
-        .replace(/&amp;/g, "&")
-        .replace(/&lt;/g, "<")
-        .replace(/&gt;/g, ">")
-        .replace(/&nbsp;/g, " ")
-        .replace(/&#039;/g, "'")
-        .trim()
-    );
+    const cols = tdMatches.map(stripHtml);
+    if (!cols.some(c => c.length > 0)) return;
 
-    if (cols.some((c) => c.length > 0)) {
-      rows.push({
-        no: cols[0] || "",
-        no_pendaftar: cols[1] || "",
-        nama: cols[2] || "",
-        jenis_kelamin: cols[3] || "",
-        sekolah_asal: cols[4] || "",
-        nilai: cols[5] || "",
-        umur: cols[6] || "",
-        status: cols[7] || "",
-      });
-    }
+    rows.push({
+      no:            cols[0] || "",
+      no_pendaftar:  cols[1] || "",
+      nama:          cols[2] || "",
+      jenis_kelamin: cols[3] || "",
+      sekolah_asal:  cols[4] || "",
+      nilai:         cols[5] || "",
+      umur:          cols[6] || "",
+      status:        cols[7] || "",
+      statusClass:   getStatusClass(tdMatches[7] || ""),
+    });
   });
 
   return rows;
 }
 
 module.exports = async function handler(req, res) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
   if (req.method === "OPTIONS") return res.status(200).end();
 
   const { sekolahid = "166", jalur = "3" } = req.query;
