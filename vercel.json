@@ -8,5 +8,15 @@
         { "key": "Access-Control-Allow-Headers", "value": "Content-Type" }
       ]
     }
-  ]
+  ],
+  "functions": {
+    "api/debug.js": {
+      "memory": 1024,
+      "maxDuration": 30
+    },
+    "api/spmb.js": {
+      "memory": 1024,
+      "maxDuration": 30
+    }
+  }
 }
