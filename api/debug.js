@@ -1,6 +1,9 @@
 // api/debug.js
-const chromium = require("@sparticuz/chromium");
+const chromium = require("@sparticuz/chromium-min");
 const puppeteer = require("puppeteer-core");
+
+// Binary diambil langsung dari GitHub release - tidak perlu bundle
+const CHROMIUM_URL = "https://github.com/Sparticuz/chromium/releases/download/v123.0.0/chromium-v123.0.0-pack.tar";
 
 module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -12,10 +15,11 @@ module.exports = async function handler(req, res) {
   let browser = null;
   try {
     browser = await puppeteer.launch({
-      args: chromium.args,
+      args: [...chromium.args, "--no-sandbox", "--disable-setuid-sandbox", "--hide-scrollbars"],
       defaultViewport: chromium.defaultViewport,
-      executablePath: await chromium.executablePath(),
+      executablePath: await chromium.executablePath(CHROMIUM_URL),
       headless: chromium.headless,
+      ignoreHTTPSErrors: true,
     });
 
     const page = await browser.newPage();
@@ -29,8 +33,6 @@ module.exports = async function handler(req, res) {
     });
 
     await page.goto(targetUrl, { waitUntil: "networkidle2", timeout: 30000 });
-
-    // Tunggu tabel muncul (kalau ada)
     await page.waitForSelector("#pendaftar-table", { timeout: 10000 }).catch(() => null);
 
     const html = await page.content();
@@ -48,7 +50,6 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({
       success: false,
       error: err.message,
-      stack: err.stack,
     });
   } finally {
     if (browser) await browser.close();
