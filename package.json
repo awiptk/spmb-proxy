@@ -5,5 +5,8 @@
   "engines": {
     "node": ">=24"
   },
-  "dependencies": {}
+  "dependencies": {
+    "puppeteer-core": "^22.0.0",
+    "@sparticuz/chromium": "^123.0.0"
+  }
 }
