@@ -1,0 +1,19 @@
+# .github/workflows/test.yml
+name: Test SPMB
+on: workflow_dispatch
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          node -e "
+          const https = require('https');
+          https.get({
+            hostname: 'spmb-kuburayakab.id',
+            path: '/pendaftaran-smp?sekolahid=166&jalur=3',
+            headers: {'User-Agent': 'Mozilla/5.0'}
+          }, res => {
+            console.log('Status:', res.statusCode);
+            console.log('Server:', res.headers.server);
+          }).end();
+          "
