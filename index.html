@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPMB Monitor</title>
+<style>
+ @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --bg: #0f1117;
+  --surface: #1a1d27;
+  --border: #2a2d3a;
+  --accent: #3b82f6;
+  --accent-dim: #1e3a5f;
+  --green: #00FF13;
+  --green-dim: #14532d;
+  --yellow: #f59e0b;
+  --yellow-dim: #451a03;
+  --text: #e2e8f0;
+  --muted: #64748b;
+  --card: #1e2130;
+  --white: #ffffff;
+  --red: #CD5757;
+  --purple: #AD4AD6;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  min-height: 100vh;
+}
+
+header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 16px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.header-inner {
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.header-title h1 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+.header-title p {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.status-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pulse {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 0 0 rgba(34,197,94,0.4);
+  animation: pulse 2s infinite;
+  flex-shrink: 0;
+}
+.pulse.idle { background: var(--muted); box-shadow: none; animation: none; }
+
+@keyframes pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(34,197,94,0.4); }
+  70%  { box-shadow: 0 0 0 6px rgba(34,197,94,0); }
+  100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
+}
+
+#status-text { font-size: 11px; color: var(--muted); }
+#last-update { font-size: 11px; color: var(--muted); }
+
+.btn {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: opacity .15s;
+}
+.btn:hover { opacity: .85; }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+.btn-outline.active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+main {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 14px 12px 40px;
+}
+
+/* ── FILTER BAR ── */
+.filter-bar {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 14px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1;
+  min-width: 160px;
+  position: relative;
+}
+
+.filter-group label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.select-wrap {
+  position: relative;
+}
+
+.select-wrap::after {
+  content: '';
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0; height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid var(--muted);
+  pointer-events: none;
+  transition: border-top-color .15s;
+}
+
+.select-wrap:focus-within::after {
+  border-top-color: var(--accent);
+}
+
+.filter-group select {
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 32px 8px 12px;
+  color: var(--text);
+  font-size: 12px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  outline: none;
+  cursor: pointer;
+  width: 100%;
+  transition: border-color .15s, box-shadow .15s;
+  line-height: 1.4;
+}
+
+.filter-group select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
+}
+
+.filter-group select:hover {
+  border-color: #3d4255;
+}
+
+.filter-group select option {
+  background: #1a1d27;
+  color: var(--text);
+  font-size: 12px;
+  padding: 6px;
+}
+
+.btn-apply {
+  padding: 8px 20px;
+  font-size: 12px;
+  align-self: flex-end;
+  white-space: nowrap;
+  border-radius: 8px;
+  gap: 6px;
+}
+
+/* ── STATS ── */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.stat-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 16px;
+}
+
+.stat-card .label {
+  font-size: 10px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.stat-card .value {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+}
+
+.stat-card .value.green  { color: var(--green); }
+.stat-card .value.yellow { color: var(--yellow); }
+.stat-card .value.blue   { color: var(--accent); }
+.stat-card .value.purple { color: var(--purple); }
+.stat-card .value.red    { color: var(--red); }
+
+#stat-quota-card { display: none; }
+#stat-quota-card.show { display: flex; flex-direction: column; }
+
+.notif-banner {
+  background: var(--accent-dim);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  font-size: 12px;
+  color: var(--accent);
+  display: none;
+  align-items: center;
+  gap: 8px;
+}
+
+.controls {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+#search-input {
+  flex: 1;
+  min-width: 140px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 12px;
+  color: var(--text);
+  font-size: 13px;
+  font-family: 'Inter', sans-serif;
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+#search-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
+}
+
+.countdown-ring {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.ring-wrap {
+  position: relative;
+  width: 24px; height: 24px;
+}
+
+.ring-wrap svg { transform: rotate(-90deg); }
+
+#ring-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.table-wrap {
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+thead th {
+  background: var(--surface);
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background .1s;
+}
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: var(--surface); }
+tbody tr.new-row { background: rgba(59,130,246,0.08); }
+
+td { padding: 10px 12px; vertical-align: middle; }
+
+.no-cell    { color: var(--muted); font-size: 12px; width: 28px; }
+.name-cell  { font-weight: 500; font-size: 13px; width: 38%; }
+.gender-cell { width: 28px; text-align: center; }
+thead th:nth-child(3) { width: 28px; }
+
+.gender-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.gender-badge.L { background: rgba(59,130,246,0.15); color: #60a5fa; }
+.gender-badge.P { background: rgba(236,72,153,0.15); color: #f472b6; }
+
+.school-cell { font-size: 12px; color: var(--muted); max-width: 160px; }
+
+.nilai-cell {
+  font-weight: 600;
+  font-size: 13px;
+  text-align: center;
+  width: 44px;
+  color: var(--accent);
+}
+
+.umur-cell { font-size: 11px; color: var(--muted); white-space: nowrap; }
+
+.status-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 500;
+  white-space: normal;
+  word-break: break-word;
+}
+.status-badge.verified {
+  background: var(--green-dim);
+  color: var(--white);
+  white-space: nowrap;
+  margin-left: -6px;
+}
+.status-badge.pending {
+  background: rgba(14,165,233,0.15);
+  color: #38bdf8;
+}
+.status-badge.returned {
+  background: var(--yellow-dim);
+  color: var(--yellow);
+  text-align: center;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+@media (max-width: 600px) {
+  .col-sekolah { display: none; }
+  .col-umur { display: none; }
+  .name-cell .school-sub { 
+    display: block; 
+    color: #888; 
+    margin-top: 5px;
+    font-size: 10px;
+  }
+}
+
+@media (min-width: 601px) {
+  .name-cell .school-sub {
+    display: block;
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 2px;
+    font-weight: 400;
+  }
+}
+
+.header-credit {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-align: right;
+  margin-top: 4px;
+}
+
+.spinner {
+  display: inline-block;
+  width: 12px; height: 12px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin .6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="header-title">
+      <h1>SPMB Monitor</h1>
+      <p id="header-subtitle">Memuat...</p>
+    </div>
+    <div class="status-bar">
+      <div class="pulse idle" id="pulse-dot"></div>
+      <span id="status-text">Siap</span>
+      <span id="last-update"></span>
+      <button class="btn" id="btn-refresh" onclick="fetchData()">
+        <span id="refresh-icon">↻</span> Refresh
+      </button>
+    </div>
+    <div class="header-credit">Created by Jul M. Ali with AI</div>
+  </div>
+</header>
+
+<main>
+
+  <!-- Filter Bar -->
+  <div class="filter-bar">
+    <div class="filter-group">
+      <label>Sekolah</label>
+      <div class="select-wrap">
+        <select id="sel-sekolah">
+          <option value="147">SMP NEGERI 1 RASAU JAYA</option>
+          <option value="148">SMP NEGERI 2 RASAU JAYA</option>
+          <option value="149">SMP NEGERI 1 SUNGAI RAYA</option>
+          <option value="150">SMP NEGERI 2 SUNGAI RAYA</option>
+          <option value="151">SMP NEGERI 7 SUNGAI RAYA</option>
+          <option value="152">SMP NEGERI 4 SUNGAI RAYA</option>
+          <option value="153">SMP NEGERI 3 SUNGAI RAYA</option>
+          <option value="154">SMP NEGERI 12 SUNGAI RAYA</option>
+          <option value="155">SMP NEGERI 13 SUNGAI RAYA</option>
+          <option value="156">SMP NEGERI 5 SUNGAI RAYA</option>
+          <option value="157">SMP NEGERI 9 SUNGAI RAYA</option>
+          <option value="158">SMP NEGERI 1 SUNGAI AMBAWANG</option>
+          <option value="159">SMP NEGERI 4 SUNGAI AMBAWANG</option>
+          <option value="160">SMP NEGERI 2 SUNGAI AMBAWANG</option>
+          <option value="161">SMP NEGERI 3 SUNGAI AMBAWANG</option>
+          <option value="162">SMP NEGERI 7 SUNGAI AMBAWANG</option>
+          <option value="163">SMPN 11 SUNGAI AMBAWANG</option>
+          <option value="164">SMP NEGERI 1 SUNGAI KAKAP</option>
+          <option value="165">SMP NEGERI 3 SUNGAI KAKAP</option>
+          <option value="166" selected>SMP NEGERI 5 SUNGAI KAKAP</option>
+          <option value="167">SMP NEGERI 11 SUNGAI KAKAP</option>
+          <option value="168">SMP NEGERI 2 SUNGAI KAKAP</option>
+          <option value="182">SMP NEGERI 11 SUNGAI RAYA</option>
+          <option value="170">SMP NEGERI 10 SUNGAI KAKAP</option>
+          <option value="169">SMP NEGERI 8 SUNGAI KAKAP</option>
+          <option value="183">SMP NEGERI 5 SUNGAI AMBAWANG</option>
+          <option value="184">SMP NEGERI 12 SUNGAI AMBAWANG</option>
+          <option value="185">SMP NEGERI 6 SUNGAI KAKAP</option>
+          <option value="186">SMP NEGERI 12 SUNGAI KAKAP</option>
+          <option value="187">SMP NEGERI 2 BATU AMPAR</option>
+          <option value="188">SMP NEGERI 4 BATU AMPAR</option>
+          <option value="189">SMP NEGERI 1 KUBU</option>
+          <option value="190">SMPN 10 SATAP KUBU</option>
+          <option value="191">SMP NEGERI 1 TERENTANG</option>
+          <option value="192">SMP NEGERI 5 SATAP TERENTANG</option>
+        </select>
+      </div>
+    </div>
+    <div class="filter-group" style="max-width:180px">
+      <label>Jalur Seleksi</label>
+      <div class="select-wrap">
+        <select id="sel-jalur">
+          <option value="0">Domisili</option>
+          <option value="1">Afirmasi</option>
+          <option value="2">Mutasi</option>
+          <option value="3" selected>Prestasi</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn btn-apply" onclick="applyFilter()">🔍 Tampilkan</button>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="label">Total</div>
+      <div class="value purple" id="stat-total">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Terverifikasi</div>
+      <div class="value green" id="stat-verified">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Perbaikan</div>
+      <div class="value yellow" id="stat-returned">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Pending</div>
+      <div class="value blue" id="stat-pending">—</div>
+    </div>
+    <!-- Kuota hanya tampil untuk SMPN 5 Sungai Kakap -->
+    <div class="stat-card" id="stat-quota-card">
+      <div class="label">Kuota Sisa</div>
+      <div class="value red" id="stat-quota">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Perubahan</div>
+      <div class="value" id="stat-changes">—</div>
+    </div>
+  </div>
+
+  <div class="notif-banner" id="notif-banner">
+    <span>🔔</span>
+    <span id="notif-text"></span>
+  </div>
+
+  <div class="controls">
+    <input type="text" id="search-input" placeholder="Cari nama / sekolah…" oninput="renderTable()">
+    <button class="btn btn-outline active" id="btn-auto" onclick="toggleAuto()">⏱ Auto ON</button>
+    <div class="countdown-ring">
+      <div class="ring-wrap">
+        <svg width="24" height="24" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10" fill="none" stroke="#2a2d3a" stroke-width="3"/>
+          <circle cx="12" cy="12" r="10" fill="none" stroke="#3b82f6" stroke-width="3"
+            stroke-dasharray="62.8" id="ring-progress" stroke-dashoffset="62.8"
+            stroke-linecap="round"/>
+        </svg>
+        <div id="ring-text">30</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th class="no-cell">No</th>
+          <th>Nama</th>
+          <th>L/P</th>
+          <th class="col-sekolah">Sekolah Asal</th>
+          <th style="text-align:center">Nilai</th>
+          <th class="col-umur">Umur</th>
+          <th style="text-align:center">Status</th>
+        </tr>
+      </thead>
+      <tbody id="table-body">
+        <tr><td colspan="7" class="empty-state">Tekan Tampilkan untuk memuat data</td></tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+
+<script>
+const INTERVAL = 30;
+
+const SCHOOLS = {
+  147:"SMP NEGERI 1 RASAU JAYA",148:"SMP NEGERI 2 RASAU JAYA",
+  149:"SMP NEGERI 1 SUNGAI RAYA",150:"SMP NEGERI 2 SUNGAI RAYA",
+  151:"SMP NEGERI 7 SUNGAI RAYA",152:"SMP NEGERI 4 SUNGAI RAYA",
+  153:"SMP NEGERI 3 SUNGAI RAYA",154:"SMP NEGERI 12 SUNGAI RAYA",
+  155:"SMP NEGERI 13 SUNGAI RAYA",156:"SMP NEGERI 5 SUNGAI RAYA",
+  157:"SMP NEGERI 9 SUNGAI RAYA",158:"SMP NEGERI 1 SUNGAI AMBAWANG",
+  159:"SMP NEGERI 4 SUNGAI AMBAWANG",160:"SMP NEGERI 2 SUNGAI AMBAWANG",
+  161:"SMP NEGERI 3 SUNGAI AMBAWANG",162:"SMP NEGERI 7 SUNGAI AMBAWANG",
+  163:"SMPN 11 SUNGAI AMBAWANG",164:"SMP NEGERI 1 SUNGAI KAKAP",
+  165:"SMP NEGERI 3 SUNGAI KAKAP",166:"SMP NEGERI 5 SUNGAI KAKAP",
+  167:"SMP NEGERI 11 SUNGAI KAKAP",168:"SMP NEGERI 2 SUNGAI KAKAP",
+  182:"SMP NEGERI 11 SUNGAI RAYA",170:"SMP NEGERI 10 SUNGAI KAKAP",
+  169:"SMP NEGERI 8 SUNGAI KAKAP",183:"SMP NEGERI 5 SUNGAI AMBAWANG",
+  184:"SMP NEGERI 12 SUNGAI AMBAWANG",185:"SMP NEGERI 6 SUNGAI KAKAP",
+  186:"SMP NEGERI 12 SUNGAI KAKAP",187:"SMP NEGERI 2 BATU AMPAR",
+  188:"SMP NEGERI 4 BATU AMPAR",189:"SMP NEGERI 1 KUBU",
+  190:"SMPN 10 SATAP KUBU",191:"SMP NEGERI 1 TERENTANG",
+  192:"SMP NEGERI 5 SATAP TERENTANG"
+};
+
+const JALUR = { 0:"Domisili", 1:"Afirmasi", 2:"Mutasi", 3:"Prestasi" };
+
+// Kuota HANYA untuk SMPN 5 Sungai Kakap (id 166)
+const KUOTA_166 = { 0: 90, 1: 36, 2: 9, 3: 45 };
+const SEKOLAH_WITH_KUOTA = 166;
+
+let currentSekolah = 166;
+let currentJalur = 3;
+let allData = [];
+let prevData = [];
+let autoOn = true;
+let countdown = INTERVAL;
+let timer = null;
+let totalChanges = 0;
+
+function updateSubtitle() {
+  document.getElementById('header-subtitle').textContent =
+    (SCHOOLS[currentSekolah] || 'Sekolah') + ' — Jalur ' + (JALUR[currentJalur] || '');
+}
+
+function updateQuotaVisibility() {
+  const card = document.getElementById('stat-quota-card');
+  if (currentSekolah === SEKOLAH_WITH_KUOTA) {
+    card.classList.add('show');
+  } else {
+    card.classList.remove('show');
+  }
+}
+
+function applyFilter() {
+  currentSekolah = parseInt(document.getElementById('sel-sekolah').value);
+  currentJalur   = parseInt(document.getElementById('sel-jalur').value);
+  prevData = [];
+  allData  = [];
+  totalChanges = 0;
+  document.getElementById('stat-changes').textContent = '—';
+  updateSubtitle();
+  updateQuotaVisibility();
+  fetchData();
+}
+
+function fmt(html) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, "text/html");
+  const rows = doc.querySelectorAll("#pendaftar-table tbody tr");
+  const data = [];
+  rows.forEach(tr => {
+    const tds = tr.querySelectorAll("td");
+    if (tds.length < 8) return;
+    const statusEl = tds[7].querySelector(".badge");
+    data.push({
+      no:      tds[0].textContent.trim(),
+      nama:    tds[2].textContent.trim(),
+      lp:      tds[3].textContent.trim(),
+      sekolah: tds[4].textContent.trim(),
+      nilai:   tds[5].textContent.trim(),
+      umur:    tds[6].textContent.replace(/\s+/g, " ").trim(),
+      status:  statusEl ? statusEl.textContent.trim() : tds[7].textContent.trim(),
+      statusClass: statusEl ? (
+        statusEl.classList.contains("badge-success") ? "verified" :
+        statusEl.classList.contains("badge-warning") ? "returned" :
+        statusEl.classList.contains("badge-info")    ? "pending"  : ""
+      ) : ""
+    });
+  });
+  return data;
+}
+
+async function fetchData() {
+  const btn  = document.getElementById("btn-refresh");
+  const dot  = document.getElementById("pulse-dot");
+  const icon = document.getElementById("refresh-icon");
+
+  btn.disabled = true;
+  icon.innerHTML = '<span class="spinner"></span>';
+  dot.classList.remove("idle");
+  setStatus("Mengambil data…");
+
+  try {
+    const res  = await fetch(`https://spmb-kuburayakab.id/pendaftaran-smp?sekolahid=${currentSekolah}&jalur=${currentJalur}`);
+const html = await res.text();
+    const data = fmt(html);
+
+    if (data.length === 0) {
+      setStatus("Tidak ada data");
+      dot.classList.add("idle");
+    } else {
+      let changed = 0;
+      if (prevData.length > 0) {
+        const prevKeys = new Set(prevData.map(d => d.no + d.nama));
+        data.forEach(d => { if (!prevKeys.has(d.no + d.nama)) changed++; });
+        if (changed > 0) {
+          totalChanges += changed;
+          showNotif(`${changed} entri baru terdeteksi!`);
+        }
+      }
+      prevData = allData.length ? [...allData] : [...data];
+      allData  = data;
+      updateStats();
+      renderTable();
+      setStatus("Berhasil");
+      document.getElementById("last-update").textContent =
+        "Terakhir: " + new Date().toLocaleTimeString("id-ID");
+    }
+  } catch(e) {
+    setStatus("Gagal: " + e.message);
+    dot.classList.add("idle");
+  }
+
+  btn.disabled = false;
+  icon.textContent = "↻";
+  resetCountdown();
+}
+
+function updateStats() {
+  const verified = allData.filter(d => d.statusClass === "verified").length;
+  const returned = allData.filter(d => d.statusClass === "returned").length;
+  const pending  = allData.filter(d => d.statusClass === "pending").length;
+
+  document.getElementById("stat-total").textContent    = allData.length;
+  document.getElementById("stat-verified").textContent = verified;
+  document.getElementById("stat-returned").textContent = returned;
+  document.getElementById("stat-pending").textContent  = pending;
+  document.getElementById("stat-changes").textContent  = totalChanges || "—";
+
+  // Kuota sisa: hanya tampil & isi untuk SMPN 5 Sungai Kakap
+  if (currentSekolah === SEKOLAH_WITH_KUOTA) {
+    const kuotaTotal = KUOTA_166[currentJalur] ?? 0;
+    const sisa = kuotaTotal - verified;
+    document.getElementById("stat-quota").textContent = sisa;
+  }
+}
+
+function renderTable() {
+  const q = document.getElementById("search-input").value.toLowerCase();
+  const filtered = allData.filter(d =>
+    d.nama.toLowerCase().includes(q) ||
+    d.sekolah.toLowerCase().includes(q)
+  );
+  const prev  = new Set(prevData.map(d => d.no + d.nama));
+  const tbody = document.getElementById("table-body");
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Tidak ada hasil</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(d => {
+    const isNew = !prev.has(d.no + d.nama) && prevData.length > 0;
+    return `
+    <tr class="${isNew ? "new-row" : ""}">
+      <td class="no-cell">${d.no}</td>
+      <td class="name-cell">
+        ${d.nama}
+        <span class="school-sub">${d.sekolah}</span>
+      </td>
+      <td class="gender-cell"><span class="gender-badge ${d.lp}">${d.lp}</span></td>
+      <td class="col-sekolah school-cell">${d.sekolah}</td>
+      <td class="nilai-cell">${d.nilai}</td>
+      <td class="col-umur umur-cell">${d.umur}</td>
+      <td><span class="status-badge ${d.statusClass}">${d.status}</span></td>
+    </tr>`;
+  }).join("");
+}
+
+function setStatus(msg) {
+  document.getElementById("status-text").textContent = msg;
+}
+
+function showNotif(msg) {
+  const el = document.getElementById("notif-banner");
+  document.getElementById("notif-text").textContent = msg;
+  el.style.display = "flex";
+  setTimeout(() => { el.style.display = "none"; }, 8000);
+}
+
+function resetCountdown() {
+  countdown = INTERVAL;
+  updateRing();
+}
+
+function updateRing() {
+  const progress = document.getElementById("ring-progress");
+  const text     = document.getElementById("ring-text");
+  const pct      = countdown / INTERVAL;
+  const circ     = 62.8;
+  progress.style.strokeDashoffset = circ - (circ * pct);
+  text.textContent = countdown;
+}
+
+function startTimer() {
+  clearInterval(timer);
+  timer = setInterval(() => {
+    if (!autoOn) return;
+    countdown--;
+    if (countdown <= 0) {
+      countdown = INTERVAL;
+      fetchData();
+    }
+    updateRing();
+  }, 1000);
+}
+
+function toggleAuto() {
+  autoOn = !autoOn;
+  const btn = document.getElementById("btn-auto");
+  btn.textContent = autoOn ? "⏱ Auto ON" : "⏱ Auto OFF";
+  btn.classList.toggle("active", autoOn);
+}
+
+// Init
+updateSubtitle();
+updateQuotaVisibility();
+startTimer();
+fetchData();
+</script>
+</body>
+</html>
