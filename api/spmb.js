@@ -1,51 +1,37 @@
 const chromium = require("@sparticuz/chromium");
 const puppeteer = require("puppeteer-core");
-
-const URL = "https://spmb-kuburayakab.id/pendaftaran-smp?sekolahid=166&jalur=3";
+const path = require("path");
 
 module.exports = async (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
-
   let browser = null;
   try {
+    const executablePath = await chromium.executablePath();
+    process.env.LD_LIBRARY_PATH = path.dirname(executablePath);
+
     browser = await puppeteer.launch({
       args: chromium.args,
       defaultViewport: chromium.defaultViewport,
-      executablePath: await chromium.executablePath(),
+      executablePath,
       headless: chromium.headless,
     });
 
     const page = await browser.newPage();
-    await page.setUserAgent(
-      "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 Chrome/124 Mobile Safari/537.36"
+    await page.goto(
+      "https://spmb-kuburayakab.id/pendaftaran-smp?sekolahid=166&jalur=3",
+      { waitUntil: "networkidle2", timeout: 25000 }
     );
+    await page.click("button[type=submit]");
+    await new Promise(r => setTimeout(r, 3000));
 
-    await page.goto(URL, { waitUntil: "networkidle2", timeout: 25000 });
+    const data = await page.evaluate(() => ({
+      headers: [...document.querySelectorAll("table thead th")].map(th => th.innerText.trim()),
+      rows: [...document.querySelectorAll("table tbody tr")].map(tr =>
+        [...tr.querySelectorAll("td")].map(td => td.innerText.trim())
+      )
+    }));
 
-    // Klik tombol Cari
-    await page.click("button[type=submit], .btn-cari, button.btn");
-    await page.waitForTimeout(3000);
-
-    // Ambil data tabel
-    const data = await page.evaluate(() => {
-      const rows = [];
-      const trs = document.querySelectorAll("table tbody tr");
-      trs.forEach((tr) => {
-        const cols = [...tr.querySelectorAll("td")].map((td) =>
-          td.innerText.trim()
-        );
-        if (cols.length > 0) rows.push(cols);
-      });
-
-      // Ambil header
-      const ths = [...document.querySelectorAll("table thead th")].map((th) =>
-        th.innerText.trim()
-      );
-
-      return { headers: ths, rows };
-    });
-
-    res.json({ ok: true, url: URL, ...data });
+    res.json({ ok: true, ...data });
   } catch (e) {
     res.status(500).json({ ok: false, error: e.message });
   } finally {
