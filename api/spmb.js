@@ -1,13 +1,27 @@
 const cheerio = require("cheerio");
 const { HttpsProxyAgent } = require("https-proxy-agent");
 
+const PROXIES = [
+  "31.59.20.176:6754",
+  "31.56.127.193:7684",
+  "45.38.107.97:6014",
+  "38.154.203.95:5863",
+  "198.105.121.200:6462",
+  "64.137.96.74:6641",
+  "198.23.243.226:6361",
+  "38.154.185.97:6370",
+  "142.111.67.146:5611",
+  "191.96.254.138:6185",
+];
+
 module.exports = async (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
 
   const { sekolahid = "166", jalur = "3" } = req.query;
 
+  const proxy = PROXIES[Math.floor(Math.random() * PROXIES.length)];
   const agent = new HttpsProxyAgent(
-    `http://${process.env.PROXY_USER}:${process.env.PROXY_PASS}@${process.env.PROXY_HOST}:${process.env.PROXY_PORT}`
+    `http://${process.env.PROXY_USER}:${process.env.PROXY_PASS}@${proxy}`
   );
 
   const response = await fetch(
@@ -18,7 +32,6 @@ module.exports = async (req, res) => {
         "Cookie": process.env.SPMB_COOKIE,
         "User-Agent": "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 Chrome/124.0.0.0 Mobile Safari/537.36",
         "Referer": "https://spmb-kuburayakab.id/",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
       },
     }
   );
@@ -45,6 +58,7 @@ module.exports = async (req, res) => {
   return res.json({
     total: siswa.length,
     siswa,
+    proxy_used: proxy,
     debug_title: siswa.length === 0 ? $("title").text() : undefined,
   });
 };
