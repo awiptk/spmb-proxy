@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "description": "Backend proxy for SPMB Kubu Raya",
   "engines": {
-    "node": ">=24"
+    "node": ">=18"
   },
   "dependencies": {
-    "puppeteer-core": "^22.0.0",
-    "@sparticuz/chromium-min": "^123.0.0"
+    "cheerio": "^1.0.0",
+    "https-proxy-agent": "^7.0.0"
   }
 }
