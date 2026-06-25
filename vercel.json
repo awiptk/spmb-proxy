@@ -1,6 +1,6 @@
 {
   "functions": {
-    "api/spmb.js": {
+    "api/scrape.js": {
       "memory": 1024,
       "maxDuration": 30
     }
