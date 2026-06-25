@@ -18,7 +18,7 @@ module.exports = async (req, res) => {
 
     const page = await browser.newPage();
     await page.goto(
-      "https://spmb-kuburayakab.id/pendaftaran-smp?sekolahid=166&jalur=3",
+      "https://spmb-kuburayakab.id/pendaftaran-smp?sekolahid=166&jalur=1",
       { waitUntil: "networkidle2", timeout: 25000 }
     );
     await page.click("button[type=submit]");
