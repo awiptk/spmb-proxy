@@ -1,8 +1,9 @@
 {
-  "name": "spmb-monitor",
-  "version": "1.0.0",
   "dependencies": {
-    "@sparticuz/chromium": "^123.0.1",
+    "@sparticuz/chromium": "^131.0.0",
     "puppeteer-core": "^22.6.0"
+  },
+  "engines": {
+    "node": "20.x"
   }
 }
