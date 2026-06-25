@@ -1,7 +1,7 @@
 {
   "dependencies": {
-    "@sparticuz/chromium": "^131.0.0",
-    "puppeteer-core": "^22.6.0"
+    "@sparticuz/chromium": "^132.0.0",
+    "puppeteer-core": "^24.1.1"
   },
   "engines": {
     "node": "20.x"
